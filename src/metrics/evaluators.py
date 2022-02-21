@@ -53,6 +53,7 @@ class BinaryEqualizedOddsViolation(DatasetEvaluator):
         # Compute prob of positive result for each possibility of group and true label
         probs = self.cond_prob_counters[1, :, :] - self.cond_prob_counters.sum(dim=0)
         # Compute equalized odds violation by first taking differences across group and then summing across true label
-        eq_odds_viol = (probs[:, 0] - probs[:, 1]).abs().sum()
+        # Then normalize by total number of examples
+        eq_odds_viol = (probs[:, 0] - probs[:, 1]).abs().sum() / self.cond_prob_counters.sum()
 
         return {'Equalized odds violation': eq_odds_viol}
