@@ -48,7 +48,7 @@ dataloader.test = L(build_data_loader)(
 )
 
 # Can also be list of DatasetEvaluators
-dataloader.evaluator = [L(ClassificationAcc)(), L(BinaryEqualizedOddsViolation)]
+dataloader.evaluator = L(list)(object=(L(ClassificationAcc)(), L(BinaryEqualizedOddsViolation)))
 
 train = get_config("../common/train.py").train
 train.init_checkpoint = None
