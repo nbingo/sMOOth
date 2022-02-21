@@ -1,9 +1,7 @@
 # Adapted from https://github.com/BigRedT/deep_income/blob/master/dataset.py
 
 import os
-import click
 import numpy as np
-import torch
 from torch.utils.data import Dataset, DataLoader
 
 

@@ -20,45 +20,11 @@ from detectron2.solver import WarmupParamScheduler
 from detectron2.solver.build import get_default_optimizer_params
 from detectron2.config import LazyCall as L
 from detectron2.model_zoo import get_config
-from detectron2.evaluation import DatasetEvaluator
-from detectron2.utils import comm
 
-from configs.common.utils import build_data_loader
+from src.configs.common.utils import build_data_loader
 from src.models.adult_mlp import IncomeClassifier
-
-from data.Adult.dataset import FeatDataset
-
-
-"""
-Note: Here we put reusable code (models, evaluation, data) together with configs just as a
-proof-of-concept, to easily demonstrate what's needed to train a ImageNet classifier in detectron2.
-Writing code in configs offers extreme flexibility but is often not a good engineering practice.
-In practice, you might want to put code in your project and import them instead.
-"""
-
-
-class ClassificationAcc(DatasetEvaluator):
-    def __init__(self):
-        super().__init__()
-        self.corr = 0
-        self.total = 0
-
-    def reset(self):
-        self.corr = self.total = 0
-
-    def process(self, inputs, outputs):
-        labels = inputs['label'].to(dtype=int, device='cpu')
-        self.corr += (outputs.argmax(dim=1).cpu() == labels.cpu()).sum().item()
-        self.total += len(labels)
-
-    def evaluate(self):
-        all_corr_total = comm.all_gather([self.corr, self.total])
-        corr = sum(x[0] for x in all_corr_total)
-        total = sum(x[1] for x in all_corr_total)
-        return {"accuracy": corr / total}
-
-
-# --- End of code that could be in a project and be imported
+from src.metrics.evaluators import ClassificationAcc
+from src.loaders.adult_loader import FeatDataset
 
 
 dataloader = OmegaConf.create()
@@ -84,7 +50,7 @@ dataloader.test = L(build_data_loader)(
 
 dataloader.evaluator = L(ClassificationAcc)()
 
-train = get_config("common/train.py").train
+train = get_config("../common/train.py").train
 train.init_checkpoint = None
 # max_iter = number epochs * (train dataset size / batch size)
 train.max_iter = 50 * 30162 // 256

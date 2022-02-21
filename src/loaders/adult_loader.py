@@ -2,13 +2,17 @@
 
 import os
 import numpy as np
+import torch
 from torch.utils.data import Dataset
+from data.Adult.income_attributes import ATTRS
 
 
 class FeatDataset(Dataset):
     def __init__(self, subset: str, income_const: dict):
         self.subset = subset
         self.feats, self.labels, self.sample_ids = self.load_data(income_const)
+        # Get group membership by converting the female label into boolean values
+        self.groups = (torch.sign(self.labels[:, ATTRS.index('Female')]) - 1).to(dtype=bool)
 
     def load_data(self, income_const: dict):
         if self.subset == 'test':
@@ -37,6 +41,7 @@ class FeatDataset(Dataset):
         to_return = {
             'feat': self.feats[idx],
             'label': self.labels[idx],
+            'group': self.groups[idx],
         }
 
         return to_return
