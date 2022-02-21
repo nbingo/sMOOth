@@ -55,4 +55,4 @@ class BinaryEqualizedOddsViolation(DatasetEvaluator):
         # Compute equalized odds violation by first taking differences across group and then summing across true label
         eq_odds_viol = (probs[:, 0] - probs[:, 1]).abs().sum()
 
-        return eq_odds_viol
+        return {'Equalized odds violation': eq_odds_viol}
