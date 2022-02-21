@@ -24,9 +24,7 @@ from detectron2.model_zoo import get_config
 from src.configs.common.utils import build_data_loader
 from src.models.adult_mlp import IncomeClassifier
 from src.loaders.adult_loader import FeatDataset
-from src.metrics.evaluators import ClassificationAcc
-
-
+from src.metrics.evaluators import ClassificationAcc, BinaryEqualizedOddsViolation
 
 dataloader = OmegaConf.create()
 dataloader.train = L(build_data_loader)(
@@ -49,7 +47,8 @@ dataloader.test = L(build_data_loader)(
     training=False,
 )
 
-dataloader.evaluator = L(ClassificationAcc)()
+# Can also be list of DatasetEvaluators
+dataloader.evaluator = [L(ClassificationAcc)(), L(BinaryEqualizedOddsViolation)]
 
 train = get_config("../common/train.py").train
 train.init_checkpoint = None
@@ -67,7 +66,6 @@ model = L(IncomeClassifier)(
     device=train.device,
 )
 
-
 optimizer = L(torch.optim.Adam)(
     params=L(get_default_optimizer_params)(),
     lr=1e-3,
@@ -82,7 +80,3 @@ lr_multiplier = L(WarmupParamScheduler)(
     warmup_length=1 / 100,
     warmup_factor=0.1,
 )
-
-
-
-
