@@ -1,7 +1,6 @@
 # adapted from https://github.com/BigRedT/deep_income/blob/master/model.py
 
-import copy
-import torch
+import torch.nn.functional as F
 import torch.nn as nn
 from base import BaseModel
 
@@ -12,53 +11,59 @@ class IncomeClassifierConstants():
         self.hidden_dim = 105
         self.num_hidden_blocks = 2
         self.drop_prob = 0.2
-        self.out_dim =2
+        self.out_dim = 2
 
 
 class IncomeClassifier(BaseModel):
-    def __init__(self,const):
+    def __init__(self, in_dim, hidden_dim, num_hidden_blocks, drop_prob, out_dim, loss_fn):
         super().__init__()
-        self.const = copy.deepcopy(const)
+        self.in_dim = in_dim
+        self.hidden_dim = hidden_dim
+        self.num_hidden_blocks = num_hidden_blocks
+        self.drop_prob = drop_prob
+        self.out_dim = out_dim
+        self.loss_fn = loss_fn
 
-        if self.const.num_hidden_blocks==0:
-            self.layers = nn.Linear(self.const.in_dim,self.const.out_dim)
+        if self.num_hidden_blocks == 0:
+            self.layers = nn.Linear(self.in_dim, self.out_dim)
 
         else:
-            layers = []
-            
             # Add input layers
-            layers.append(self.input_block())
-            
+            layers = [self.input_block()]
+
             # Add hidden layers
-            for i in range(self.const.num_hidden_blocks):
+            for i in range(self.num_hidden_blocks):
                 layers.append(self.hidden_block())
-            
+
             # Add output layers
             layers.append(self.output_block())
-            
+
             self.layers = nn.Sequential(*layers)
 
         self.softmax_layer = nn.Softmax(1)
 
-
     def input_block(self):
         return nn.Sequential(
-            nn.Linear(self.const.in_dim,self.const.hidden_dim),
-            nn.BatchNorm1d(self.const.hidden_dim),
-            nn.Dropout(self.const.drop_prob),
+            nn.Linear(self.in_dim, self.hidden_dim),
+            nn.BatchNorm1d(self.hidden_dim),
+            nn.Dropout(self.drop_prob),
             nn.Sigmoid())
 
     def hidden_block(self):
         return nn.Sequential(
-            nn.Linear(self.const.hidden_dim,self.const.hidden_dim),
-            nn.BatchNorm1d(self.const.hidden_dim),
-            nn.Dropout(self.const.drop_prob),
+            nn.Linear(self.hidden_dim, self.hidden_dim),
+            nn.BatchNorm1d(self.hidden_dim),
+            nn.Dropout(self.drop_prob),
             nn.Sigmoid())
 
     def output_block(self):
-        return nn.Linear(self.const.hidden_dim,self.const.out_dim)
+        return nn.Linear(self.hidden_dim, self.out_dim)
 
-    def forward(self,x):
+    def forward(self, data):
+        x, labels = data
         logits = self.layers(x)
-        probs = self.softmax_layer(logits)
-        return logits, probs
+        # probs = self.softmax_layer(logits)
+        if self.training:
+            return F.cross_entropy(logits, labels)
+        else:
+            return logits

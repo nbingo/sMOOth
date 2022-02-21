@@ -22,7 +22,7 @@ class BaseModel(nn.Module, metaclass=ABCMeta):
         super().__init__()
 
     @abstractmethod
-    def forward(self):
+    def forward(self, data):
         """
         Subclasses must override this method, but adhere to the same return type.
 

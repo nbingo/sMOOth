@@ -12,23 +12,18 @@ python tools/lazyconfig_train_net.py --config-file configs/Misc/torchvision_imag
 
 import yaml
 import torch
-from torch import nn
-from torch.nn import functional as F
 from omegaconf import OmegaConf
-import torchvision
-from torchvision.transforms import transforms as T
-from torchvision.models.resnet import ResNet, Bottleneck
-from fvcore.common.param_scheduler import MultiStepParamScheduler
+from fvcore.common.param_scheduler import CosineParamScheduler
 
 from detectron2.solver import WarmupParamScheduler
 from detectron2.solver.build import get_default_optimizer_params
 from detectron2.config import LazyCall as L
 from detectron2.model_zoo import get_config
-from detectron2.data.samplers import TrainingSampler, InferenceSampler
 from detectron2.evaluation import DatasetEvaluator
 from detectron2.utils import comm
 
 from .common.utils import build_data_loader
+from src.models.adult_mlp import IncomeClassifier
 
 from data.Adult.dataset import FeatDataset
 
@@ -42,11 +37,16 @@ In practice, you might want to put code in your project and import them instead.
 
 
 class ClassificationAcc(DatasetEvaluator):
+    def __init__(self):
+        super().__init__()
+        self.corr = 0
+        self.total = 0
+
     def reset(self):
         self.corr = self.total = 0
 
     def process(self, inputs, outputs):
-        image, label = inputs
+        _, label = inputs
         self.corr += (outputs.argmax(dim=1).cpu() == label.cpu()).sum().item()
         self.total += len(label)
 
@@ -83,21 +83,25 @@ dataloader.test = L(build_data_loader)(
 
 dataloader.evaluator = L(ClassificationAcc)()
 
-model = L(ClassificationNet)(
-    model=(ResNet)(block=Bottleneck, layers=[3, 4, 6, 3], zero_init_residual=True)
+model = L(IncomeClassifier)(
+    in_dim=105,
+    hidden_dim=105,
+    num_hidden_blocks=2,
+    drop_prob=0.2,
+    out_dim=2,
 )
 
 
-optimizer = L(torch.optim.SGD)(
+optimizer = L(torch.optim.Adam)(
     params=L(get_default_optimizer_params)(),
-    lr=0.1,
-    momentum=0.9,
+    lr=1e-3,
     weight_decay=1e-4,
 )
 
 lr_multiplier = L(WarmupParamScheduler)(
-    scheduler=L(MultiStepParamScheduler)(
-        values=[1.0, 0.1, 0.01, 0.001], milestones=[30, 60, 90, 100]
+    scheduler=L(CosineParamScheduler)(
+        start_value=0.1,
+        end_value=1e-4,
     ),
     warmup_length=1 / 100,
     warmup_factor=0.1,
@@ -106,4 +110,7 @@ lr_multiplier = L(WarmupParamScheduler)(
 
 train = get_config("common/train.py").train
 train.init_checkpoint = None
-train.max_iter = 100 * 1281167 // 256
+# max_iter = number epochs * (train dataset size / batch size)
+train.max_iter = 50 * 30162 // 256
+train.eval_period = 30162 // 256
+
