@@ -18,8 +18,8 @@ from fvcore.common.param_scheduler import CosineParamScheduler
 
 from detectron2.solver import WarmupParamScheduler
 from detectron2.solver.build import get_default_optimizer_params
-from detectron2.config import LazyCall as L
-from detectron2.config import LazyConfig
+from detectron2.config import LazyConfig, LazyCall as L
+from detectron2.evaluation import DatasetEvaluators
 
 from src.configs.common.utils import build_data_loader
 from src.models.adult_mlp import IncomeClassifier
@@ -48,7 +48,7 @@ dataloader.test = L(build_data_loader)(
 )
 
 # Can also be list of DatasetEvaluators
-dataloader.evaluator = L(list)(object=(L(ClassificationAcc)(), L(BinaryEqualizedOddsViolation)))
+dataloader.evaluator = L(DatasetEvaluators)(evaluators=(L(ClassificationAcc)(), L(BinaryEqualizedOddsViolation)))
 
 train = LazyConfig.load("/lfs/local/0/nomir/sMOOth/src/configs/common/train.py").train
 train.init_checkpoint = None
