@@ -39,7 +39,8 @@ class BinaryEqualizedOddsViolation(DatasetEvaluator):
     def process(self, inputs: dict[str, torch.Tensor], outputs: torch.Tensor):
         labels = inputs['label'].to(dtype=int, device='cpu')
         groups = inputs['group'].to(dtype=int, device='cpu')
-        _, pred = outputs.max(dim=1).cpu()
+        _, pred = outputs.max(dim=1)
+        pred = pred.to(device='cpu')
         for label in [0, 1]:     # loop over true labels
             for group in [0, 1]:     # loop over groups
                 for pred_label in [0, 1]:       # loop over predicted labels
