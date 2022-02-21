@@ -15,7 +15,7 @@ class IncomeClassifierConstants():
 
 
 class IncomeClassifier(BaseModel):
-    def __init__(self, in_dim, hidden_dim, num_hidden_blocks, drop_prob, out_dim, loss_fn):
+    def __init__(self, in_dim, hidden_dim, num_hidden_blocks, drop_prob, out_dim, loss_fn, device='cuda'):
         super().__init__()
         self.in_dim = in_dim
         self.hidden_dim = hidden_dim
@@ -23,6 +23,7 @@ class IncomeClassifier(BaseModel):
         self.drop_prob = drop_prob
         self.out_dim = out_dim
         self.loss_fn = loss_fn
+        self.device = device
 
         if self.num_hidden_blocks == 0:
             self.layers = nn.Linear(self.in_dim, self.out_dim)
@@ -60,8 +61,9 @@ class IncomeClassifier(BaseModel):
         return nn.Linear(self.hidden_dim, self.out_dim)
 
     def forward(self, data):
-        x, labels = data
-        logits = self.layers(x)
+        features = data['feat'].to(self.device)
+        labels = data['label'].to(dtype=int, device=self.device)
+        logits = self.layers(features)
         # probs = self.softmax_layer(logits)
         if self.training:
             return self.loss_fn(logits, labels)

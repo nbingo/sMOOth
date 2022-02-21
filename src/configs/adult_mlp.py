@@ -47,9 +47,9 @@ class ClassificationAcc(DatasetEvaluator):
         self.corr = self.total = 0
 
     def process(self, inputs, outputs):
-        _, label = inputs
-        self.corr += (outputs.argmax(dim=1).cpu() == label.cpu()).sum().item()
-        self.total += len(label)
+        labels = inputs['label'].to(dtype=int, device='cpu')
+        self.corr += (outputs.argmax(dim=1).cpu() == labels.cpu()).sum().item()
+        self.total += len(labels)
 
     def evaluate(self):
         all_corr_total = comm.all_gather([self.corr, self.total])
@@ -84,13 +84,20 @@ dataloader.test = L(build_data_loader)(
 
 dataloader.evaluator = L(ClassificationAcc)()
 
+train = get_config("common/train.py").train
+train.init_checkpoint = None
+# max_iter = number epochs * (train dataset size / batch size)
+train.max_iter = 50 * 30162 // 256
+train.eval_period = 30162 // 256
+
 model = L(IncomeClassifier)(
     in_dim=105,
     hidden_dim=105,
     num_hidden_blocks=2,
     drop_prob=0.2,
     out_dim=2,
-    loss_fn=F.cross_entropy
+    loss_fn=F.cross_entropy,
+    device=train.device,
 )
 
 
@@ -110,9 +117,5 @@ lr_multiplier = L(WarmupParamScheduler)(
 )
 
 
-train = get_config("common/train.py").train
-train.init_checkpoint = None
-# max_iter = number epochs * (train dataset size / batch size)
-train.max_iter = 50 * 30162 // 256
-train.eval_period = 30162 // 256
+
 
