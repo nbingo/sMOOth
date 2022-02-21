@@ -12,6 +12,7 @@ python tools/lazyconfig_train_net.py --config-file configs/Misc/torchvision_imag
 
 import yaml
 import torch
+import torch.nn.functional as F
 from omegaconf import OmegaConf
 from fvcore.common.param_scheduler import CosineParamScheduler
 
@@ -22,7 +23,7 @@ from detectron2.model_zoo import get_config
 from detectron2.evaluation import DatasetEvaluator
 from detectron2.utils import comm
 
-from .common.utils import build_data_loader
+from configs.common.utils import build_data_loader
 from src.models.adult_mlp import IncomeClassifier
 
 from data.Adult.dataset import FeatDataset
@@ -89,6 +90,7 @@ model = L(IncomeClassifier)(
     num_hidden_blocks=2,
     drop_prob=0.2,
     out_dim=2,
+    loss_fn=F.cross_entropy
 )
 
 

@@ -6,14 +6,13 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from global_constants import income_const
-
 
 class FeatDataset(Dataset):
-    def __init__(self,subset):
+    def __init__(self,subset: str, income_const: dict):
         self.subset = subset
-        self.feats, self.labels, self.sample_ids = self.load_data()
-        
+        self.feats, self.labels, self.sample_ids = self.load_data(income_const)
+
+    def load_data(self, income_const: dict):
         if self.subset=='test':
             subset_npy = 'test_npy'
         else:

@@ -2,7 +2,7 @@
 
 import torch.nn.functional as F
 import torch.nn as nn
-from base import BaseModel
+from models.base import BaseModel
 
 
 class IncomeClassifierConstants():
@@ -64,6 +64,6 @@ class IncomeClassifier(BaseModel):
         logits = self.layers(x)
         # probs = self.softmax_layer(logits)
         if self.training:
-            return F.cross_entropy(logits, labels)
+            return self.loss_fn(logits, labels)
         else:
             return logits

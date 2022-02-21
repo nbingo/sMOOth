@@ -4,5 +4,5 @@ import yaml
 
 
 income_const = yaml.load(
-    open('income.yml'),
+    open('/lfs/local/0/nomir/sMOOth/data/Adult/income.yml'),
     Loader=yaml.FullLoader)
