@@ -12,7 +12,7 @@ class FeatDataset(Dataset):
         self.subset = subset
         self.feats, self.labels, self.sample_ids = self.load_data(income_const)
         # Get group membership by converting the female label into boolean values
-        self.groups = (torch.sign(self.feats[:, ATTRS.index('Female')]) - 1).to(dtype=bool)
+        self.groups = (np.sign(self.feats[:, ATTRS.index('Female')]) - 1).astype(bool)
 
     def load_data(self, income_const: dict):
         if self.subset == 'test':
