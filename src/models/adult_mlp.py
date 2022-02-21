@@ -1,8 +1,7 @@
 # adapted from https://github.com/BigRedT/deep_income/blob/master/model.py
 
-import torch.nn.functional as F
 import torch.nn as nn
-from models.base import BaseModel
+from src.models.base import BaseModel
 
 
 class IncomeClassifierConstants():
