@@ -50,7 +50,7 @@ dataloader.test = L(build_data_loader)(
 # Can also be list of DatasetEvaluators
 dataloader.evaluator = L(list)(object=(L(ClassificationAcc)(), L(BinaryEqualizedOddsViolation)))
 
-train = get_config("./src/configs/common/train.py").train
+train = get_config("/lfs/local/0/nomir/sMOOth/src/configs/common/train.py").train
 train.init_checkpoint = None
 # max_iter = number epochs * (train dataset size / batch size)
 train.max_iter = 50 * 30162 // 256
