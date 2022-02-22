@@ -56,13 +56,15 @@ class SubspaceTrainer(SimpleTrainer):
         loss_dict = self.model(data)
         # Sample from Dirichlet
         preference_vector = self.dirichlet_dist.sample()
+        self.model.set_alpha(alpha=preference_vector)
         losses = torch.matmul(torch.stack(list(loss_dict.values())), preference_vector)
         # TODO: Create subspace model class to make this standard or general MOO method class that requires preference
         #  vector during inference. In general shouldn't be needing to import or reference specifics
         #  from out of library code
         # TODO: Will also need to change specific dataset evaluators that use MOO methods that require preference
         #  vectors for inference in a similar way
-        loss_dict = self.model(data, alpha=preference_vector)
+        # TODO: GRADIENT PROBLEM COMES FROM SUBSPACE WRAPPER WAAAAAA
+        loss_dict = self.model(data)
         loss_dict['total_loss'] = losses
 
         """
