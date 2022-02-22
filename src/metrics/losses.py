@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import torch
+import torch.nn.functional as F
 from typing import Callable, Iterable
 from detectron2.config import LazyConfig, instantiate
 from collections import OrderedDict
@@ -60,6 +61,10 @@ def _compute_binary_equalized_odds_counters(inputs: dict[str, torch.Tensor], out
 
 
 def equalized_odds_violation(inputs: dict, outputs):
-    print(f'Input type: {type(inputs)}')
     cond_prob_counters = _compute_binary_equalized_odds_counters(inputs, outputs)
     return _binary_equalized_odds_viol(cond_prob_counters)
+
+
+def cross_entropy_loss(inputs: dict, logits):
+    labels = inputs['label'].to(dtype=int, device='cpu')
+    return F.cross_entropy(logits, labels)

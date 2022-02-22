@@ -12,7 +12,6 @@ python tools/lazyconfig_train_net.py --config-file configs/Misc/torchvision_imag
 
 import yaml
 import torch
-import torch.nn.functional as F
 from omegaconf import OmegaConf
 from fvcore.common.param_scheduler import CosineParamScheduler
 
@@ -25,6 +24,7 @@ from src.configs.common.utils import build_data_loader
 from src.models.adult_mlp import IncomeClassifier
 from src.loaders.adult_loader import FeatDataset
 from src.metrics.evaluators import ClassificationAcc, BinaryEqualizedOddsViolation
+from src.metrics.losses import cross_entropy_loss
 
 dataloader = OmegaConf.create()
 dataloader.train = L(build_data_loader)(
@@ -62,7 +62,7 @@ model = L(IncomeClassifier)(
     num_hidden_blocks=2,
     drop_prob=0.2,
     out_dim=2,
-    loss_fn=F.cross_entropy,
+    loss_fn=cross_entropy_loss,
     device=train.device,
 )
 

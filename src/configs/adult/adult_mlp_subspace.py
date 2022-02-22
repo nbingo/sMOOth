@@ -12,7 +12,6 @@ python tools/lazyconfig_train_net.py --config-file configs/Misc/torchvision_imag
 
 import yaml
 import torch
-import torch.nn.functional as F
 from omegaconf import OmegaConf
 from fvcore.common.param_scheduler import CosineParamScheduler
 
@@ -24,7 +23,7 @@ from detectron2.evaluation import DatasetEvaluators
 from src.configs.common.utils import build_data_loader
 from src.models.adult_mlp import IncomeClassifier
 from src.metrics.evaluators import ClassificationAcc, BinaryEqualizedOddsViolation, MultiObjectiveEvaluator
-from src.metrics.losses import MultiObjectiveLoss, equalized_odds_violation
+from src.metrics.losses import MultiObjectiveLoss, equalized_odds_violation, cross_entropy_loss
 from src.loaders.adult_loader import FeatDataset
 from src.methods.subspace.subspace_wrapper import to_subspace_class
 from src.methods.subspace.subspace_method import SubspaceTrainer
@@ -70,7 +69,7 @@ model = L(to_subspace_class(model_class=IncomeClassifier, num_vertices=2))(
     num_hidden_blocks=2,
     drop_prob=0.2,
     out_dim=2,
-    loss_fn=MultiObjectiveLoss([F.cross_entropy, equalized_odds_violation]),
+    loss_fn=MultiObjectiveLoss([cross_entropy_loss, equalized_odds_violation]),
     device=train.device,
 )
 

@@ -61,10 +61,10 @@ class IncomeClassifier(BaseModel):
 
     def forward(self, data):
         features = data['feat'].to(self.device)
-        labels = data['label'].to(dtype=int, device=self.device)
+        # labels = data['label'].to(dtype=int, device=self.device)
         logits = self.layers(features)
         # probs = self.softmax_layer(logits)
         if self.training:
-            return self.loss_fn(logits, labels)
+            return self.loss_fn(data, logits)
         else:
             return logits
