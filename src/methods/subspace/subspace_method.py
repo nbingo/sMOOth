@@ -56,7 +56,7 @@ class SubspaceTrainer(SimpleTrainer):
         loss_dict = self.model(data)
         # Sample from Dirichlet
         preference_vector = self.dirichlet_dist.sample()
-        losses = torch.matmul(torch.Tensor(loss_dict.values()), preference_vector)
+        losses = torch.matmul(torch.Tensor(list(loss_dict.values())), preference_vector)
         # TODO: Create subspace model class to make this standard or general MOO method class that requires preference
         #  vector during inference. In general shouldn't be needing to import or reference specifics
         #  from out of library code
