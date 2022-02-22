@@ -1,7 +1,9 @@
 from detectron2.evaluation import DatasetEvaluator
 from detectron2.utils import comm
+
 import torch
 
+from .losses import binary_equalized_odds_viol
 
 class ClassificationAcc(DatasetEvaluator):
     def __init__(self):
@@ -50,10 +52,4 @@ class BinaryEqualizedOddsViolation(DatasetEvaluator):
                         (pred[(labels == label) & (groups == group)] == pred_label).sum()
 
     def evaluate(self):
-        # Compute prob of positive result for each possibility of group and true label
-        probs = self.cond_prob_counters[1, :, :] - self.cond_prob_counters.sum(dim=0)
-        # Compute equalized odds violation by first taking differences across group and then summing across true label
-        # Then normalize by total number of examples
-        eq_odds_viol = (probs[:, 0] - probs[:, 1]).abs().sum() / self.cond_prob_counters.sum()
-
-        return {'Equalized odds violation': eq_odds_viol}
+        return {'Equalized odds violation': binary_equalized_odds_viol(self.cond_prob_counters)}
