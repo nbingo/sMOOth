@@ -65,6 +65,8 @@ class SubspaceTrainer(TrainerBase):
         """
         If you want to do something with the losses, you can wrap the model.
         """
+        loss_list = self.model(data)
+
         loss_dict = self.model(data)
         if isinstance(loss_dict, torch.Tensor):
             losses = loss_dict
