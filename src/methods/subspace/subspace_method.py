@@ -24,7 +24,7 @@ class SubspaceTrainer(SimpleTrainer):
     or write your own training loop.
     """
 
-    def __init__(self, model, data_loader, optimizer, alpha: float = 1):
+    def __init__(self, model, data_loader, optimizer, alpha: float = torch.ones(2)):
         """
         Args:
             model: a torch Module. Takes a data from data_loader and returns a
