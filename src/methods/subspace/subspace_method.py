@@ -62,7 +62,7 @@ class SubspaceTrainer(SimpleTrainer):
         #  from out of library code
         # TODO: Will also need to change specific dataset evaluators that use MOO methods that require preference
         #  vectors for inference in a similar way
-        loss_dict = self.model(data, preference_vector)
+        loss_dict = self.model(data, alpha=preference_vector)
         loss_dict['total_loss'] = losses
 
         """
