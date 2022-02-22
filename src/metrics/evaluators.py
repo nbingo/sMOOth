@@ -70,7 +70,7 @@ class BinaryEqualizedOddsViolation(DatasetEvaluator):
         self.cond_prob_counters = torch.zeros((2, 2, 2), dtype=torch.long)
 
     def process(self, inputs: dict[str, torch.Tensor], outputs: torch.Tensor):
-        _compute_binary_equalized_odds_counters(inputs, outputs, self.cond_prob_counters)
+        self.cond_prob_counters = _compute_binary_equalized_odds_counters(inputs, outputs, self.cond_prob_counters)
 
     def evaluate(self):
         return {'Equalized odds violation': _binary_equalized_odds_viol(self.cond_prob_counters)}
