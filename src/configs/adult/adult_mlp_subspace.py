@@ -25,6 +25,7 @@ from src.configs.common.utils import build_data_loader
 from src.models.adult_mlp import IncomeClassifier
 from src.metrics.evaluators import ClassificationAcc
 from src.loaders.adult_loader import FeatDataset
+from src.methods.subspace.subspace_wrapper import to_subspace_class
 
 
 dataloader = OmegaConf.create()
@@ -56,7 +57,7 @@ train.init_checkpoint = None
 train.max_iter = 50 * 30162 // 256
 train.eval_period = 30162 // 256
 
-model = L(IncomeClassifier)(
+model = L(to_subspace_class(model_class=IncomeClassifier, num_vertices=2))(
     in_dim=105,
     hidden_dim=105,
     num_hidden_blocks=2,

@@ -1,7 +1,25 @@
+from __future__ import annotations
+
 import torch
+from typing import Callable
+from detectron2.config import LazyConfig, instantiate
+from collections import OrderedDict
 
 
-def binary_equalized_odds_viol(cond_prob_counters: torch.Tensor):
+class MultiObjectiveLoss():
+    def __init__(self, losses: list[Callable | LazyConfig]):
+        # Instantiate the loss function if needed
+        self.losses = [instantiate(loss) if isinstance(LazyConfig) else loss for loss in losses]
+
+    def __call__(self, inputs: dict[str, torch.Tensor], outputs):
+        loss_dict = OrderedDict()
+        # Simply compute all the losses and store them
+        for loss in self.losses:
+            loss_dict[loss.__name__] = loss(inputs, outputs)
+        return loss_dict
+
+
+def _binary_equalized_odds_viol(cond_prob_counters: torch.Tensor):
     # Compute prob of positive result for each possibility of group and true label
     probs = cond_prob_counters[1, :, :] - cond_prob_counters.sum(dim=0)
     # Compute equalized odds violation by first taking differences across group and then summing across true label
@@ -11,8 +29,8 @@ def binary_equalized_odds_viol(cond_prob_counters: torch.Tensor):
     return eq_odds_viol
 
 
-def compute_binary_equalized_odds_counters(inputs: dict[str, torch.Tensor], outputs,
-                                           cond_prob_counters: torch.Tensor = None):
+def _compute_binary_equalized_odds_counters(inputs: dict[str, torch.Tensor], outputs,
+                                            cond_prob_counters: torch.Tensor = None):
     """
     Computers conditional probability counters for use in equalized odds violation loss
     :param inputs: The same inputs as given to the model in dictionary format
@@ -41,10 +59,6 @@ def compute_binary_equalized_odds_counters(inputs: dict[str, torch.Tensor], outp
     return cond_prob_counters
 
 
-class EqualizedOddsViolation:
-    def __call__(self, inputs: dict, outputs):
-        cond_prob_counters = compute_binary_equalized_odds_counters(inputs, outputs)
-        return binary_equalized_odds_viol(cond_prob_counters)
-
-
-
+def equalized_odds_violation(inputs: dict, outputs):
+    cond_prob_counters = _compute_binary_equalized_odds_counters(inputs, outputs)
+    return _binary_equalized_odds_viol(cond_prob_counters)

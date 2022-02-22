@@ -3,7 +3,7 @@ from detectron2.utils import comm
 
 import torch
 
-from .losses import binary_equalized_odds_viol, compute_binary_equalized_odds_counters
+from .losses import _binary_equalized_odds_viol, _compute_binary_equalized_odds_counters
 
 class ClassificationAcc(DatasetEvaluator):
     def __init__(self):
@@ -39,7 +39,7 @@ class BinaryEqualizedOddsViolation(DatasetEvaluator):
         self.cond_prob_counters = torch.zeros((2, 2, 2), dtype=torch.long)
 
     def process(self, inputs: dict[str, torch.Tensor], outputs: torch.Tensor):
-        compute_binary_equalized_odds_counters(inputs, outputs, self.cond_prob_counters)
+        _compute_binary_equalized_odds_counters(inputs, outputs, self.cond_prob_counters)
 
     def evaluate(self):
-        return {'Equalized odds violation': binary_equalized_odds_viol(self.cond_prob_counters)}
+        return {'Equalized odds violation': _binary_equalized_odds_viol(self.cond_prob_counters)}

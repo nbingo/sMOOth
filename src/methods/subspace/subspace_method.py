@@ -2,6 +2,7 @@ import numpy as np
 import time
 from typing import Mapping
 import torch
+from torch.distributions.dirichlet import Dirichlet
 
 import detectron2.utils.comm as comm
 from detectron2.utils.events import get_event_storage
@@ -27,13 +28,14 @@ class SubspaceTrainer(TrainerBase):
     or write your own training loop.
     """
 
-    def __init__(self, model, data_loader, optimizer):
+    def __init__(self, model, data_loader, optimizer, alpha: float):
         """
         Args:
             model: a torch Module. Takes a data from data_loader and returns a
                 dict of losses.
             data_loader: an iterable. Contains data to be used to call model.
             optimizer: a torch optimizer.
+            alpha: Parameter for Dirichlet distribution
         """
         super().__init__()
 
@@ -49,6 +51,7 @@ class SubspaceTrainer(TrainerBase):
         self.data_loader = data_loader
         self._data_loader_iter = iter(data_loader)
         self.optimizer = optimizer
+        self.dirichlet_dist = Dirichlet(concentration=alpha)
 
     def run_step(self):
         """
@@ -65,14 +68,17 @@ class SubspaceTrainer(TrainerBase):
         """
         If you want to do something with the losses, you can wrap the model.
         """
-        loss_list = self.model(data)
-
         loss_dict = self.model(data)
-        if isinstance(loss_dict, torch.Tensor):
-            losses = loss_dict
-            loss_dict = {"total_loss": loss_dict}
-        else:
-            losses = sum(loss_dict.values())
+        # Sample from Dirichlet
+        preference_vector = self.dirichlet_dist.sample()
+        losses = torch.matmul(torch.Tensor(loss_dict.values()), preference_vector)
+        # TODO: Create subspace model class to make this standard or general MOO method class that requires preference
+        #  vector during inference. In general shouldn't be needing to import or reference specifics
+        #  from out of library code
+        # TODO: Will also need to change specific dataset evaluators that use MOO methods that require preference
+        #  vectors for inference in a similar way
+        loss_dict = self.model(data, preference_vector)
+        loss_dict['total_loss'] = losses
 
         """
         If you need to accumulate gradients or do something similar, you can
