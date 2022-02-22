@@ -18,8 +18,7 @@ from fvcore.common.param_scheduler import CosineParamScheduler
 
 from detectron2.solver import WarmupParamScheduler
 from detectron2.solver.build import get_default_optimizer_params
-from detectron2.config import LazyCall as L
-from detectron2.model_zoo import get_config
+from detectron2.config import LazyCall as L, LazyConfig
 from detectron2.evaluation import DatasetEvaluators
 
 from src.configs.common.utils import build_data_loader
@@ -58,7 +57,7 @@ dataloader.evaluator = L(MultiObjectiveEvaluator)(
     )
 )
 
-train = get_config("../common/train.py").train
+train = LazyConfig.load("/lfs/local/0/nomir/sMOOth/src/configs/common/train.py").train
 train.init_checkpoint = None
 # max_iter = number epochs * (train dataset size / batch size)
 train.max_iter = 50 * 30162 // 256
