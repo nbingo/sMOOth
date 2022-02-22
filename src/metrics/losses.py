@@ -6,6 +6,9 @@ from typing import Callable, Iterable
 from detectron2.config import LazyConfig, instantiate
 from collections import OrderedDict
 
+# TODO: Everywhere here probably should be sending to GPU instead of CPU, but gotta figure out how to put that
+#  parameter in
+
 
 class MultiObjectiveLoss:
     def __init__(self, losses: Iterable[Callable | LazyConfig]):
@@ -67,4 +70,4 @@ def equalized_odds_violation(inputs: dict, outputs):
 
 def cross_entropy_loss(inputs: dict, logits):
     labels = inputs['label'].to(dtype=int, device='cpu')
-    return F.cross_entropy(logits, labels)
+    return F.cross_entropy(logits.to(device='cpu'), labels)
