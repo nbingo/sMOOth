@@ -14,11 +14,10 @@ in the config file and implement a new train_net.py to handle them.
 """
 import logging
 
+import torch.autograd
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import LazyConfig, instantiate
 from detectron2.engine import (
-    AMPTrainer,
-    SimpleTrainer,
     default_argument_parser,
     default_setup,
     default_writers,
@@ -120,6 +119,7 @@ def main(args):
 
 
 if __name__ == "__main__":
+    torch.autograd.set_detect_anomaly(True)
     args = default_argument_parser().parse_args()
     launch(
         main,
