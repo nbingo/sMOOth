@@ -60,5 +60,6 @@ def _compute_binary_equalized_odds_counters(inputs: dict[str, torch.Tensor], out
 
 
 def equalized_odds_violation(inputs: dict, outputs):
+    print(f'Input type: {type(inputs)}')
     cond_prob_counters = _compute_binary_equalized_odds_counters(inputs, outputs)
     return _binary_equalized_odds_viol(cond_prob_counters)

@@ -24,6 +24,7 @@ class SubspaceTrainer(SimpleTrainer):
     or write your own training loop.
     """
 
+    # TODO: Can't really work with alpha for dirichlet this way
     def __init__(self, model, data_loader, optimizer, alpha: float = torch.ones(2)):
         """
         Args:
