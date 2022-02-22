@@ -1,9 +1,40 @@
-from detectron2.evaluation import DatasetEvaluator
+from __future__ import annotations
+
+from detectron2.evaluation import DatasetEvaluator, DatasetEvaluators
 from detectron2.utils import comm
+from detectron2.config import LazyConfig, instantiate
 
 import torch
 
 from .losses import _binary_equalized_odds_viol, _compute_binary_equalized_odds_counters
+
+
+class MultiObjectiveEvaluator(DatasetEvaluator):
+    def __init__(self, dataset_evaluators: DatasetEvaluators):
+        super().__init__()
+
+        self.evaluators = instantiate(dataset_evaluators) \
+            if isinstance(dataset_evaluators, LazyConfig) else dataset_evaluators
+        self.num_evaluators = len(self.evaluators._evaluators)
+
+    def reset(self):
+        self.evaluators.reset()
+
+    def process(self, inputs, outputs):
+        self.evaluators.process(inputs, outputs)
+
+    def evaluate(self):
+        # Choose a central preference vector
+        # TODO: a central preference vector of course isn't always the best choice, so going to need to do hypervolume
+        #  or something like that sometime soon. Really honestly this kind of cumulative evaluator doesn't work in this
+        #  case and has to be hypervolume
+        preference_ray = torch.sqrt(torch.ones(self.num_evaluators) / self.num_evaluators)
+        results = self.evaluators.evaluate()
+        # Make into torch tensor
+        results = torch.Tensor(list(results.values()))
+        result = torch.matmul(results, preference_ray)
+        return result
+
 
 class ClassificationAcc(DatasetEvaluator):
     def __init__(self):

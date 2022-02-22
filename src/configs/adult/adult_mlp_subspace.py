@@ -20,12 +20,15 @@ from detectron2.solver import WarmupParamScheduler
 from detectron2.solver.build import get_default_optimizer_params
 from detectron2.config import LazyCall as L
 from detectron2.model_zoo import get_config
+from detectron2.evaluation import DatasetEvaluators
 
 from src.configs.common.utils import build_data_loader
 from src.models.adult_mlp import IncomeClassifier
-from src.metrics.evaluators import ClassificationAcc
+from src.metrics.evaluators import ClassificationAcc, BinaryEqualizedOddsViolation, MultiObjectiveEvaluator
+from src.metrics.losses import MultiObjectiveLoss, equalized_odds_violation
 from src.loaders.adult_loader import FeatDataset
 from src.methods.subspace.subspace_wrapper import to_subspace_class
+from src.methods.subspace.subspace_method import SubspaceTrainer
 
 
 dataloader = OmegaConf.create()
@@ -49,13 +52,18 @@ dataloader.test = L(build_data_loader)(
     training=False,
 )
 
-dataloader.evaluator = L(ClassificationAcc)()
+dataloader.evaluator = L(MultiObjectiveEvaluator)(
+    dataset_evaluators=L(DatasetEvaluators)(
+        evaluators=(ClassificationAcc(), BinaryEqualizedOddsViolation())
+    )
+)
 
 train = get_config("../common/train.py").train
 train.init_checkpoint = None
 # max_iter = number epochs * (train dataset size / batch size)
 train.max_iter = 50 * 30162 // 256
 train.eval_period = 30162 // 256
+train.trainer = SubspaceTrainer
 
 model = L(to_subspace_class(model_class=IncomeClassifier, num_vertices=2))(
     in_dim=105,
@@ -63,7 +71,7 @@ model = L(to_subspace_class(model_class=IncomeClassifier, num_vertices=2))(
     num_hidden_blocks=2,
     drop_prob=0.2,
     out_dim=2,
-    loss_fn=F.cross_entropy,
+    loss_fn=MultiObjectiveLoss([F.cross_entropy, equalized_odds_violation]),
     device=train.device,
 )
 

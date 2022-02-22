@@ -1,15 +1,11 @@
-import numpy as np
 import time
-from typing import Mapping
 import torch
 from torch.distributions.dirichlet import Dirichlet
 
-import detectron2.utils.comm as comm
-from detectron2.utils.events import get_event_storage
-from detectron2.engine.train_loop import TrainerBase
+from detectron2.engine.train_loop import SimpleTrainer
 
 
-class SubspaceTrainer(TrainerBase):
+class SubspaceTrainer(SimpleTrainer):
     """
     A simple trainer for the most common type of task:
     single-cost single-optimizer single-data-source iterative optimization,
@@ -37,20 +33,8 @@ class SubspaceTrainer(TrainerBase):
             optimizer: a torch optimizer.
             alpha: Parameter for Dirichlet distribution
         """
-        super().__init__()
+        super().__init__(model, data_loader, optimizer)
 
-        """
-        We set the model to training mode in the trainer.
-        However it's valid to train a model that's in eval mode.
-        If you want your model (or a submodule of it) to behave
-        like evaluation during training, you can overwrite its train() method.
-        """
-        model.train()
-
-        self.model = model
-        self.data_loader = data_loader
-        self._data_loader_iter = iter(data_loader)
-        self.optimizer = optimizer
         self.dirichlet_dist = Dirichlet(concentration=alpha)
 
     def run_step(self):
@@ -96,62 +80,3 @@ class SubspaceTrainer(TrainerBase):
         """
         self.optimizer.step()
 
-    def _write_metrics(
-            self,
-            loss_dict: Mapping[str, torch.Tensor],
-            data_time: float,
-            prefix: str = "",
-    ) -> None:
-        SubspaceTrainer.write_metrics(loss_dict, data_time, prefix)
-
-    @staticmethod
-    def write_metrics(
-            loss_dict: Mapping[str, torch.Tensor],
-            data_time: float,
-            prefix: str = "",
-    ) -> None:
-        """
-        Args:
-            loss_dict (dict): dict of scalar losses
-            data_time (float): time taken by the dataloader iteration
-            prefix (str): prefix for logging keys
-        """
-        metrics_dict = {k: v.detach().cpu().item() for k, v in loss_dict.items()}
-        metrics_dict["data_time"] = data_time
-
-        # Gather metrics among all workers for logging
-        # This assumes we do DDP-style training, which is currently the only
-        # supported method in detectron2.
-        all_metrics_dict = comm.gather(metrics_dict)
-
-        if comm.is_main_process():
-            storage = get_event_storage()
-
-            # data_time among workers can have high variance. The actual latency
-            # caused by data_time is the maximum among workers.
-            data_time = np.max([x.pop("data_time") for x in all_metrics_dict])
-            storage.put_scalar("data_time", data_time)
-
-            # average the rest metrics
-            metrics_dict = {
-                k: np.mean([x[k] for x in all_metrics_dict]) for k in all_metrics_dict[0].keys()
-            }
-            total_losses_reduced = sum(metrics_dict.values())
-            if not np.isfinite(total_losses_reduced):
-                raise FloatingPointError(
-                    f"Loss became infinite or NaN at iteration={storage.iter}!\n"
-                    f"loss_dict = {metrics_dict}"
-                )
-
-            storage.put_scalar("{}total_loss".format(prefix), total_losses_reduced)
-            if len(metrics_dict) > 1:
-                storage.put_scalars(**metrics_dict)
-
-    def state_dict(self):
-        ret = super().state_dict()
-        ret["optimizer"] = self.optimizer.state_dict()
-        return ret
-
-    def load_state_dict(self, state_dict):
-        super().load_state_dict(state_dict)
-        self.optimizer.load_state_dict(state_dict["optimizer"])

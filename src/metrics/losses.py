@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import torch
-from typing import Callable
+from typing import Callable, Iterable
 from detectron2.config import LazyConfig, instantiate
 from collections import OrderedDict
 
 
-class MultiObjectiveLoss():
-    def __init__(self, losses: list[Callable | LazyConfig]):
+class MultiObjectiveLoss:
+    def __init__(self, losses: Iterable[Callable | LazyConfig]):
         # Instantiate the loss function if needed
         self.losses = [instantiate(loss) if isinstance(LazyConfig) else loss for loss in losses]
 

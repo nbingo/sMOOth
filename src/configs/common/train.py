@@ -1,5 +1,7 @@
 # Common training-related configs that are designed for "tools/lazyconfig_train_net.py"
 # You can use your own instead, together with your own train_net.py
+from detectron2.engine import SimpleTrainer
+
 train = dict(
     output_dir="./output",
     init_checkpoint="",
@@ -13,6 +15,7 @@ train = dict(
     checkpointer=dict(period=100, max_to_keep=10),  # options for PeriodicCheckpointer
     eval_period=5000,
     log_period=20,
-    device="cuda"
+    device="cuda",
+    trainer=SimpleTrainer,
     # ...
 )
