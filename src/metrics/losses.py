@@ -9,7 +9,7 @@ from collections import OrderedDict
 class MultiObjectiveLoss:
     def __init__(self, losses: Iterable[Callable | LazyConfig]):
         # Instantiate the loss function if needed
-        self.losses = [instantiate(loss) if isinstance(LazyConfig) else loss for loss in losses]
+        self.losses = [instantiate(loss) if isinstance(loss, LazyConfig) else loss for loss in losses]
 
     def __call__(self, inputs: dict[str, torch.Tensor], outputs):
         loss_dict = OrderedDict()
