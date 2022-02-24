@@ -17,13 +17,13 @@ from detectron2.engine import (
     default_argument_parser,
     launch,
 )
-from src.harnesses.harnesses import BaseHarness
+from src.harnesses.harnesses import SimpleHarness
 
 
 if __name__ == "__main__":
     torch.autograd.set_detect_anomaly(True)
     args = default_argument_parser().parse_args()
-    train_harness = BaseHarness(args)
+    train_harness = SimpleHarness(args)
     launch(
         train_harness.main(),
         args.num_gpus,

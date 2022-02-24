@@ -12,7 +12,9 @@ from detectron2.engine.defaults import create_ddp_model
 from detectron2.evaluation import inference_on_dataset, print_csv_format
 from detectron2.utils import comm
 
+from multiprocessing import Pool
 
+from copy import deepcopy
 
 """
 Training script using the new "LazyConfig" python config files.
@@ -27,15 +29,38 @@ To add more complicated training logic, you can easily add other configs
 in the config file and implement a new train_net.py to handle them.
 """
 
-# Base class for trainer harnesses
 
+class SimpleHarness:
+    """
+    Simple training harness for single process and model training
+    """
 
-class BaseHarness():
-    def __init__(self, args):
+    def __init__(self, args, cfg=None):
         self.args = args
-        self.cfg = LazyConfig.load(self.args.config_file)
-        self.cfg = LazyConfig.apply_overrides(self.cfg, self.args.opts)
-        default_setup(self.cfg, self.args)
+        if cfg is None:
+            self.cfg = LazyConfig.load(self.args.config_file)
+            """
+                           Args:
+                               cfg: an object with the following attributes:
+                                   model: instantiate to a module
+                                   dataloader.{train,test}: instantiate to dataloaders
+                                   dataloader.evaluator: instantiate to evaluator for test set
+                                   optimizer: instantaite to an optimizer
+                                   lr_multiplier: instantiate to a fvcore scheduler
+                                   train: other misc config defined in `configs/common/train.py`, including:
+                                       output_dir (str)
+                                       init_checkpoint (str)
+                                       amp.enabled (bool)
+                                       max_iter (int)
+                                       eval_period, log_period (int)
+                                       device (str)
+                                       checkpointer (dict)
+                                       ddp (dict)
+            """
+            self.cfg = LazyConfig.apply_overrides(self.cfg, self.args.opts)
+            default_setup(self.cfg, self.args)
+        else:       # We assume cfg is properly made
+            self.cfg = cfg
 
     def main(self):
         if self.args.eval_only:
@@ -57,24 +82,7 @@ class BaseHarness():
             return ret
 
     def do_train(self):
-        """
-        Args:
-            cfg: an object with the following attributes:
-                model: instantiate to a module
-                dataloader.{train,test}: instantiate to dataloaders
-                dataloader.evaluator: instantiate to evaluator for test set
-                optimizer: instantaite to an optimizer
-                lr_multiplier: instantiate to a fvcore scheduler
-                train: other misc config defined in `configs/common/train.py`, including:
-                    output_dir (str)
-                    init_checkpoint (str)
-                    amp.enabled (bool)
-                    max_iter (int)
-                    eval_period, log_period (int)
-                    device (str)
-                    checkpointer (dict)
-                    ddp (dict)
-        """
+
         model = instantiate(self.cfg.model)
         logger = logging.getLogger("detectron2")
         logger.info("Model:\n{}".format(model))
@@ -119,5 +127,26 @@ class BaseHarness():
         trainer.train(start_iter, self.cfg.train.max_iter)
 
 
+class MultiProcessHarness(SimpleHarness):
+    """
+    its config file must have the extra parameter train.process_over_key key with value indicating the key in the config
+    file that will be changed in each model that is spawned. In addition, it must have train.process_over_vals
+    which is a list of values that will be used to replace the key indicated in train.process_over_key in each of the
+    individually spawned models.
+    It also must have train.num_workers to inidcate the maximum number of workers allowed to be used
+    """
 
+    def __init__(self, args):
+        super().__init__(args)
+        # Create the new configs that will be used for the various spawned proceses
+        self.modified_cfgs = []
+        for val in self.cfg.process_over_val:
+            new_cfg = deepcopy(self.cfg)
+            new_cfg[self.cfg.process_over_key] = val
+            self.modified_cfgs.append(new_cfg)
+
+        # Feed these configs to simple harnesses
+        self.harnesses = [SimpleHarness(self.args, cfg) for cfg in self.modified_cfgs]
+
+    # TODO: Create the do_train and do_test methods that actually end up spawning the subprocesses
 
