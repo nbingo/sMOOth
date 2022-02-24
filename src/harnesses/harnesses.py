@@ -48,7 +48,6 @@ class BaseHarness():
         model.to(self.cfg.train.device)
         model = create_ddp_model(model)
         DetectionCheckpointer(model).load(self.cfg.train.init_checkpoint)
-        print(self.do_test())
         if "evaluator" in self.cfg.dataloader:
             ret = inference_on_dataset(
                 model, instantiate(self.cfg.dataloader.test), instantiate(self.cfg.dataloader.evaluator)
