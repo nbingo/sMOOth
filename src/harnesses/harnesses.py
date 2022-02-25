@@ -13,7 +13,7 @@ from detectron2.evaluation import inference_on_dataset, print_csv_format
 from detectron2.utils import comm
 
 from multiprocessing import Pool
-
+from itertools import cycle
 from copy import deepcopy
 
 """
@@ -133,20 +133,38 @@ class MultiProcessHarness(SimpleHarness):
     file that will be changed in each model that is spawned. In addition, it must have train.process_over_vals
     which is a list of values that will be used to replace the key indicated in train.process_over_key in each of the
     individually spawned models.
-    It also must have train.num_workers to inidcate the maximum number of workers allowed to be used
+    It also must have train.num_workers to inidcate the maximum number of workers allowed to be used (CPU workers.
+    Lastly, it must have train.gpus and train.num_models_per_gpu, a list of GPUs to use that will be iterated over to
+    train the models with at most train.num_models_per_gpu models on each gpu
     """
 
     def __init__(self, args):
         super().__init__(args)
         # Create the new configs that will be used for the various spawned proceses
         self.modified_cfgs = []
+        cycle_gpus = cycle(self.cfg.train.gpus)
         for val in self.cfg.process_over_val:
             new_cfg = deepcopy(self.cfg)
-            new_cfg[self.cfg.process_over_key] = val
+            new_cfg[self.cfg.process_over_key] = val        # TODO: This probably isn't the right syntax here...
+            new_cfg.train.device = f'cuda:{next(cycle_gpus)}'
             self.modified_cfgs.append(new_cfg)
 
-        # Feed these configs to simple harnesses
-        self.harnesses = [SimpleHarness(self.args, cfg) for cfg in self.modified_cfgs]
+    # TODO: Create the do_train and do_test methods that actually end up spawning the subprocesses.
+    #  In this probably have to make sure they all have separate loggers somehow...
+    #  And also probably need ot make a shared queue for using the correct gpu.
 
-    # TODO: Create the do_train and do_test methods that actually end up spawning the subprocesses
+    def _init_harness_do_test(self, cfg):
+        harness = SimpleHarness(self.args, cfg)
+        harness.do_test()
 
+    def _init_harness_do_train(self, cfg):
+        harness = SimpleHarness(self.args, cfg)
+        harness.do_train()
+
+    def do_test(self):
+        with Pool(processes=len(self.cfg.train.gpus)) as pool:
+            pool.imap(self._init_harness_do_test, self.modified_cfgs)
+
+    def do_train(self):
+        with Pool(processes=len(self.cfg.train.gpus)) as pool:
+            pool.imap(self._init_harness_do_train, self.modified_cfgs)
