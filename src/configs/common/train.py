@@ -16,6 +16,6 @@ train = dict(
     eval_period=5000,
     log_period=20,
     device="cuda",
-    trainer=SimpleTrainer,
+    harness=SimpleTrainer,
     # ...
 )
