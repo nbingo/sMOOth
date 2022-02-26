@@ -24,8 +24,8 @@ from src.configs.common.utils import build_data_loader
 from src.models.adult_mlp import IncomeClassifier
 from src.loaders.adult_loader import FeatDataset
 from src.metrics.evaluators import ClassificationAcc, BinaryEqualizedOddsViolation
-from src.metrics.losses import cross_entropy_loss
-from src.harnesses.harnesses import MultiProcessHarness
+from src.metrics.losses import cross_entropy_loss, equalized_odds_violation, MultiObjectiveLoss
+from src.harnesses.harnesses import MultiProcessHarness, SimpleHarness
 
 dataloader = OmegaConf.create()
 dataloader.train = L(build_data_loader)(
@@ -56,8 +56,10 @@ train.init_checkpoint = None
 # max_iter = number epochs * (train dataset size / batch size)
 train.max_iter = 50 * 30162 // 256
 train.eval_period = 30162 // 256
+train.loss_fn = L(MultiObjectiveLoss)(losses=[cross_entropy_loss, equalized_odds_violation])
+train.loss_tradeoff = torch.Tensor([0.5, 0.5])
 # Arguments for multiprocess training
-train.harness = MultiProcessHarness
+train.harness = SimpleHarness
 train.num_workers = 1
 train.gpus = [0]        # TODO: Eventually want this to be a commandline arg
 train.process_over_key = 'model.loss_fn'
@@ -69,7 +71,7 @@ model = L(IncomeClassifier)(
     num_hidden_blocks=2,
     drop_prob=0.2,
     out_dim=2,
-    loss_fn=cross_entropy_loss,
+    loss_fn=train.loss_fn,
     device=train.device,
 )
 
