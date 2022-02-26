@@ -25,12 +25,13 @@ if __name__ == "__main__":
     torch.autograd.set_detect_anomaly(True)
     args = default_argument_parser().parse_args()
     cfg = LazyConfig.load(args.config_file)
-    train_harness = cfg.train.harness(args)
-    launch(
-        train_harness.main(),
-        args.num_gpus,
-        num_machines=args.num_machines,
-        machine_rank=args.machine_rank,
-        dist_url=args.dist_url,
-        args=(args,),
-    )
+    train_harness = cfg.train.harness(args) # I think problem comes from here and the definition of main
+    train_harness.main()
+    # launch(
+    #     train_harness.main,
+    #     args.num_gpus,
+    #     num_machines=args.num_machines,
+    #     machine_rank=args.machine_rank,
+    #     dist_url=args.dist_url,
+    #     args=(),
+    # )

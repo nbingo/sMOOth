@@ -19,12 +19,14 @@ from detectron2.solver import WarmupParamScheduler
 from detectron2.solver.build import get_default_optimizer_params
 from detectron2.config import LazyConfig, LazyCall as L
 from detectron2.evaluation import DatasetEvaluators
+from detectron2.engine.train_loop import SimpleTrainer
 
 from src.configs.common.utils import build_data_loader
 from src.models.adult_mlp import IncomeClassifier
 from src.loaders.adult_loader import FeatDataset
 from src.metrics.evaluators import ClassificationAcc, BinaryEqualizedOddsViolation
 from src.metrics.losses import cross_entropy_loss
+from src.harnesses.harnesses import SimpleHarness
 
 dataloader = OmegaConf.create()
 dataloader.train = L(build_data_loader)(
@@ -55,6 +57,8 @@ train.init_checkpoint = None
 # max_iter = number epochs * (train dataset size / batch size)
 train.max_iter = 50 * 30162 // 256
 train.eval_period = 30162 // 256
+train.harness = SimpleHarness
+train.trainer = SimpleTrainer
 
 model = L(IncomeClassifier)(
     in_dim=105,
