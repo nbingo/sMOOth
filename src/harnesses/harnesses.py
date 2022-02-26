@@ -143,7 +143,7 @@ class MultiProcessHarness(SimpleHarness):
         # Create the new configs that will be used for the various spawned proceses
         self.modified_cfgs = []
         cycle_gpus = cycle(self.cfg.train.gpus)
-        for val in self.cfg.process_over_val:
+        for val in self.cfg.process_over_vals:
             new_cfg = deepcopy(self.cfg)
             new_cfg[self.cfg.process_over_key] = val        # TODO: This probably isn't the right syntax here...
             new_cfg.train.device = f'cuda:{next(cycle_gpus)}'
