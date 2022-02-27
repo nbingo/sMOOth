@@ -15,16 +15,19 @@ from detectron2.utils import comm
 class SimpleHarness:
     def __init__(self, args):
         self.args = args
+        self.cfg = LazyConfig.load(self.args.config_file)
+        self.cfg = LazyConfig.apply_overrides(self.cfg, self.args.opts)
+        default_setup(self.cfg, self.args)
 
-    def do_test(self, cfg, model):
-        if "evaluator" in cfg.dataloader:
+    def do_test(self, model):
+        if "evaluator" in self.cfg.dataloader:
             ret = inference_on_dataset(
-                model, instantiate(cfg.dataloader.test), instantiate(cfg.dataloader.evaluator)
+                model, instantiate(self.cfg.dataloader.test), instantiate(self.cfg.dataloader.evaluator)
             )
             print_csv_format(ret)
             return ret
 
-    def do_train(self, args, cfg):
+    def do_train(self):
         """
         Args:
             cfg: an object with the following attributes:
@@ -43,59 +46,55 @@ class SimpleHarness:
                     checkpointer (dict)
                     ddp (dict)
         """
-        model = instantiate(cfg.model)
+        model = instantiate(self.cfg.model)
         logger = logging.getLogger("detectron2")
         logger.info("Model:\n{}".format(model))
-        model.to(cfg.train.device)
+        model.to(self.cfg.train.device)
 
-        cfg.optimizer.params.model = model
-        optim = instantiate(cfg.optimizer)
+        self.cfg.optimizer.params.model = model
+        optim = instantiate(self.cfg.optimizer)
 
-        train_loader = instantiate(cfg.dataloader.train)
+        train_loader = instantiate(self.cfg.dataloader.train)
 
-        model = create_ddp_model(model, **cfg.train.ddp)
-        trainer = cfg.train.trainer(model, train_loader, optim)
+        model = create_ddp_model(model, **self.cfg.train.ddp)
+        trainer = self.cfg.train.trainer(model, train_loader, optim)
         checkpointer = DetectionCheckpointer(
             model,
-            cfg.train.output_dir,
+            self.cfg.train.output_dir,
             trainer=trainer,
         )
         trainer.register_hooks(
             [
                 hooks.IterationTimer(),
-                hooks.LRScheduler(scheduler=instantiate(cfg.lr_multiplier)),
-                hooks.PeriodicCheckpointer(checkpointer, **cfg.train.checkpointer)
+                hooks.LRScheduler(scheduler=instantiate(self.cfg.lr_multiplier)),
+                hooks.PeriodicCheckpointer(checkpointer, **self.cfg.train.checkpointer)
                 if comm.is_main_process()
                 else None,
-                hooks.EvalHook(cfg.train.eval_period, lambda: self.do_test(cfg, model)),
+                hooks.EvalHook(self.cfg.train.eval_period, lambda: self.do_test(model)),
                 hooks.PeriodicWriter(
-                    default_writers(cfg.train.output_dir, cfg.train.max_iter),
-                    period=cfg.train.log_period,
+                    default_writers(self.cfg.train.output_dir, self.cfg.train.max_iter),
+                    period=self.cfg.train.log_period,
                 )
                 if comm.is_main_process()
                 else None,
             ]
         )
 
-        checkpointer.resume_or_load(cfg.train.init_checkpoint, resume=args.resume)
-        if args.resume and checkpointer.has_checkpoint():
+        checkpointer.resume_or_load(self.cfg.train.init_checkpoint, resume=self.args.resume)
+        if self.args.resume and checkpointer.has_checkpoint():
             # The checkpoint stores the training iteration that just finished, thus we start
             # at the next iteration
             start_iter = trainer.iter + 1
         else:
             start_iter = 0
-        trainer.train(start_iter, cfg.train.max_iter)
+        trainer.train(start_iter, self.cfg.train.max_iter)
 
     def main(self):
-        cfg = LazyConfig.load(self.args.config_file)
-        cfg = LazyConfig.apply_overrides(cfg, self.args.opts)
-        default_setup(cfg, self.args)
-
         if self.args.eval_only:
-            model = instantiate(cfg.model)
-            model.to(cfg.train.device)
+            model = instantiate(self.cfg.model)
+            model.to(self.cfg.train.device)
             model = create_ddp_model(model)
-            DetectionCheckpointer(model).load(cfg.train.init_checkpoint)
-            print(self.do_test(cfg, model))
+            DetectionCheckpointer(model).load(self.cfg.train.init_checkpoint)
+            print(self.do_test(model))
         else:
-            self.do_train(self.args, cfg)
+            self.do_train()
