@@ -1,9 +1,8 @@
 import logging
 
 from detectron2.checkpoint import DetectionCheckpointer
-from detectron2.config import LazyConfig, instantiate
+from detectron2.config import instantiate
 from detectron2.engine import (
-    default_setup,
     default_writers,
     hooks,
 )
@@ -13,11 +12,9 @@ from detectron2.utils import comm
 
 
 class SimpleHarness:
-    def __init__(self, args):
+    def __init__(self, args, cfg):
         self.args = args
-        self.cfg = LazyConfig.load(self.args.config_file)
-        self.cfg = LazyConfig.apply_overrides(self.cfg, self.args.opts)
-        default_setup(self.cfg, self.args)
+        self.cfg = cfg
 
     def _do_test(self, model):
         if "evaluator" in self.cfg.dataloader:

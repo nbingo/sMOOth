@@ -16,15 +16,20 @@ in the config file and implement a new train_net.py to handle them.
 import torch.autograd
 from detectron2.engine import (
     default_argument_parser,
+    default_setup,
     launch,
 )
+from detectron2.config import LazyConfig
 
 from src.harnesses.harnesses import SimpleHarness
 
 if __name__ == "__main__":
     torch.autograd.set_detect_anomaly(True)
     args = default_argument_parser().parse_args()
-    harness = SimpleHarness(args)
+    cfg = LazyConfig.load(args.config_file)
+    cfg = LazyConfig.apply_overrides(cfg, args.opts)
+    default_setup(cfg, args)
+    harness = SimpleHarness(args, cfg)
     launch(
         harness.main,
         args.num_gpus,
