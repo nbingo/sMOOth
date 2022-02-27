@@ -11,9 +11,9 @@ from detectron2.evaluation import inference_on_dataset, print_csv_format
 from detectron2.utils import comm
 
 from concurrent.futures import ProcessPoolExecutor, FIRST_COMPLETED, wait, ALL_COMPLETED
-import multiprocessing
 from itertools import cycle
 from copy import deepcopy
+import torch
 
 
 
@@ -140,13 +140,13 @@ class MultiProcessHarness(SimpleHarness):
         harness._do_train()
 
     def _do_test(self):
-        multiprocessing.set_start_method('spawn')
-        with ProcessPoolExecutor(max_workers=len(self.cfg.train.gpus)) as executor:
+        with ProcessPoolExecutor(max_workers=len(self.cfg.train.gpus), mp_context=torch.multiprocessing.get_context()) \
+                as executor:
             futures = executor.map(self._init_harness_do_test, self.modified_cfgs)
             wait(futures, return_when=ALL_COMPLETED)
 
     def _do_train(self):
-        multiprocessing.set_start_method('spawn')
-        with ProcessPoolExecutor(max_workers=len(self.cfg.train.gpus)) as executor:
+        with ProcessPoolExecutor(max_workers=len(self.cfg.train.gpus), mp_context=torch.multiprocessing.get_context()) \
+                as executor:
             futures = executor.map(self._init_harness_do_train, self.modified_cfgs)
             wait(futures, return_when=ALL_COMPLETED)
