@@ -10,8 +10,7 @@ from detectron2.engine.defaults import create_ddp_model
 from detectron2.evaluation import inference_on_dataset, print_csv_format
 from detectron2.utils import comm
 
-import multiprocessing
-from multiprocessing import Pool
+from concurrent.futures import ProcessPoolExecutor, FIRST_COMPLETED
 from itertools import cycle
 from copy import deepcopy
 
@@ -114,10 +113,10 @@ class MultiProcessHarness(SimpleHarness):
     Lastly, it must have train.gpus and train.num_models_per_gpu, a list of GPUs to use that will be iterated over to
     train the models with at most train.num_models_per_gpu models on each gpu
     """
-
+    # TODO: GIVE UP ON MULTIPROCESSING HARNESS B/C DAEMONIC PROCESEES CAN'T HAVE CHILDREN. JUST MAKE ANOTHER SCRIPT
+    #  SPECIFICALLY FOR LINEAR SCALARIZATION AND DEAL WITH IT
     def __init__(self, args, cfg):
         super().__init__(args, cfg)
-        multiprocessing.set_start_method('spawn')
         # Create the new configs that will be used for the various spawned proceses
         self.modified_cfgs = []
         cycle_gpus = cycle(self.cfg.train.gpus)
@@ -140,9 +139,9 @@ class MultiProcessHarness(SimpleHarness):
         harness._do_train()
 
     def _do_test(self):
-        with Pool(processes=len(self.cfg.train.gpus)) as pool:
-            _ = pool.map(self._init_harness_do_test, self.modified_cfgs)
+        with ProcessPoolExecutor(max_workers=len(self.cfg.train.gpus)) as executor:
+            _ = executor.map(self._init_harness_do_test, self.modified_cfgs)
 
     def _do_train(self):
-        with Pool(processes=len(self.cfg.train.gpus)) as pool:
-            _ = pool.map(self._init_harness_do_train, self.modified_cfgs)
+        with ProcessPoolExecutor(max_workers=len(self.cfg.train.gpus)) as executor:
+            _ = executor.map(self._init_harness_do_train, self.modified_cfgs)
