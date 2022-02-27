@@ -10,7 +10,7 @@ from detectron2.engine.defaults import create_ddp_model
 from detectron2.evaluation import inference_on_dataset, print_csv_format
 from detectron2.utils import comm
 
-from concurrent.futures import ProcessPoolExecutor, FIRST_COMPLETED
+from concurrent.futures import ProcessPoolExecutor, FIRST_COMPLETED, wait, ALL_COMPLETED
 from itertools import cycle
 from copy import deepcopy
 
@@ -140,8 +140,10 @@ class MultiProcessHarness(SimpleHarness):
 
     def _do_test(self):
         with ProcessPoolExecutor(max_workers=len(self.cfg.train.gpus)) as executor:
-            _ = executor.map(self._init_harness_do_test, self.modified_cfgs)
+            futures = executor.map(self._init_harness_do_test, self.modified_cfgs)
+            wait(futures, return_when=ALL_COMPLETED)
 
     def _do_train(self):
         with ProcessPoolExecutor(max_workers=len(self.cfg.train.gpus)) as executor:
-            _ = executor.map(self._init_harness_do_train, self.modified_cfgs)
+            futures = executor.map(self._init_harness_do_train, self.modified_cfgs)
+            wait(futures, return_when=ALL_COMPLETED)
