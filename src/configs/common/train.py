@@ -1,6 +1,7 @@
 # Common training-related configs that are designed for "tools/lazyconfig_train_net.py"
 # You can use your own instead, together with your own train_net.py
 from detectron2.engine import SimpleTrainer
+from src.harnesses.harnesses import SimpleHarness
 
 train = dict(
     output_dir="./output",
@@ -17,5 +18,6 @@ train = dict(
     log_period=20,
     device="cuda",
     trainer=SimpleTrainer,
+    harness=SimpleHarness
     # ...
 )
