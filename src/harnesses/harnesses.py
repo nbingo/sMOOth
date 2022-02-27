@@ -139,8 +139,8 @@ class MultiProcessHarness(SimpleHarness):
 
     def _do_test(self):
         with Pool(processes=len(self.cfg.train.gpus)) as pool:
-            pool.imap(self._init_harness_do_test, self.modified_cfgs)
+            _ = pool.map(self._init_harness_do_test, self.modified_cfgs)
 
     def _do_train(self):
         with Pool(processes=len(self.cfg.train.gpus)) as pool:
-            pool.imap(self._init_harness_do_train, self.modified_cfgs)
+            _ = pool.map(self._init_harness_do_train, self.modified_cfgs)
