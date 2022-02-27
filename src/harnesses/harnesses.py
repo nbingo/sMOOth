@@ -103,44 +103,44 @@ class SimpleHarness:
             self._do_train()
 
 
-# class MultiProcessHarness(SimpleHarness):
-#     """
-#     its config file must have the extra parameter train.process_over_key key with value indicating the key in the config
-#     file that will be changed in each model that is spawned. In addition, it must have train.process_over_vals
-#     which is a list of values that will be used to replace the key indicated in train.process_over_key in each of the
-#     individually spawned models.
-#     It also must have train.num_workers to inidcate the maximum number of workers allowed to be used (CPU workers.
-#     Lastly, it must have train.gpus and train.num_models_per_gpu, a list of GPUs to use that will be iterated over to
-#     train the models with at most train.num_models_per_gpu models on each gpu
-#     """
-#
-#     def __init__(self, args, cfg):
-#         super().__init__(args, cfg)
-#         # Create the new configs that will be used for the various spawned proceses
-#         self.modified_cfgs = []
-#         cycle_gpus = cycle(self.cfg.train.gpus)
-#         for val in self.cfg.train.process_over_vals:
-#             new_cfg = deepcopy(self.cfg)
-#             new_cfg[self.cfg.train.process_over_key] = val        # TODO: This probably isn't the right syntax here...
-#             new_cfg.train.device = f'cuda:{next(cycle_gpus)}'
-#             self.modified_cfgs.append(new_cfg)
-#
-#     # TODO: Create the do_train and do_test methods that actually end up spawning the subprocesses.
-#     #  In this probably have to make sure they all have separate loggers somehow...
-#     #  And also probably need ot make a shared queue for using the correct gpu.
-#
-#     def _init_harness_do_test(self, cfg):
-#         harness = SimpleHarness(self.args, cfg)
-#         harness._do_test()
-#
-#     def _init_harness_do_train(self, cfg):
-#         harness = SimpleHarness(self.args, cfg)
-#         harness._do_train()
-#
-#     def _do_test(self):
-#         with Pool(processes=len(self.cfg.train.gpus)) as pool:
-#             pool.imap(self._init_harness_do_test, self.modified_cfgs)
-#
-#     def _do_train(self):
-#         with Pool(processes=len(self.cfg.train.gpus)) as pool:
-#             pool.imap(self._init_harness_do_train, self.modified_cfgs)
+class MultiProcessHarness(SimpleHarness):
+    """
+    its config file must have the extra parameter train.process_over_key key with value indicating the key in the config
+    file that will be changed in each model that is spawned. In addition, it must have train.process_over_vals
+    which is a list of values that will be used to replace the key indicated in train.process_over_key in each of the
+    individually spawned models.
+    It also must have train.num_workers to inidcate the maximum number of workers allowed to be used (CPU workers.
+    Lastly, it must have train.gpus and train.num_models_per_gpu, a list of GPUs to use that will be iterated over to
+    train the models with at most train.num_models_per_gpu models on each gpu
+    """
+
+    def __init__(self, args, cfg):
+        super().__init__(args, cfg)
+        # Create the new configs that will be used for the various spawned proceses
+        self.modified_cfgs = []
+        cycle_gpus = cycle(self.cfg.train.gpus)
+        for val in self.cfg.train.process_over_vals:
+            new_cfg = deepcopy(self.cfg)
+            new_cfg[self.cfg.train.process_over_key] = val        # TODO: This probably isn't the right syntax here...
+            new_cfg.train.device = f'cuda:{next(cycle_gpus)}'
+            self.modified_cfgs.append(new_cfg)
+
+    # TODO: Create the do_train and do_test methods that actually end up spawning the subprocesses.
+    #  In this probably have to make sure they all have separate loggers somehow...
+    #  And also probably need ot make a shared queue for using the correct gpu.
+
+    def _init_harness_do_test(self, cfg):
+        harness = SimpleHarness(self.args, cfg)
+        harness._do_test()
+
+    def _init_harness_do_train(self, cfg):
+        harness = SimpleHarness(self.args, cfg)
+        harness._do_train()
+
+    def _do_test(self):
+        with Pool(processes=len(self.cfg.train.gpus)) as pool:
+            pool.imap(self._init_harness_do_test, self.modified_cfgs)
+
+    def _do_train(self):
+        with Pool(processes=len(self.cfg.train.gpus)) as pool:
+            pool.imap(self._init_harness_do_train, self.modified_cfgs)
