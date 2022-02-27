@@ -10,6 +10,7 @@ from detectron2.engine.defaults import create_ddp_model
 from detectron2.evaluation import inference_on_dataset, print_csv_format
 from detectron2.utils import comm
 
+import multiprocessing
 from multiprocessing import Pool
 from itertools import cycle
 from copy import deepcopy
@@ -116,6 +117,7 @@ class MultiProcessHarness(SimpleHarness):
 
     def __init__(self, args, cfg):
         super().__init__(args, cfg)
+        multiprocessing.set_start_method('spawn')
         # Create the new configs that will be used for the various spawned proceses
         self.modified_cfgs = []
         cycle_gpus = cycle(self.cfg.train.gpus)
