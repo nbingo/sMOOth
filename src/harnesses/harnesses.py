@@ -1,14 +1,11 @@
 import logging
 
-import torch.autograd
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import LazyConfig, instantiate
 from detectron2.engine import (
-    default_argument_parser,
     default_setup,
     default_writers,
     hooks,
-    launch,
 )
 from detectron2.engine.defaults import create_ddp_model
 from detectron2.evaluation import inference_on_dataset, print_csv_format
