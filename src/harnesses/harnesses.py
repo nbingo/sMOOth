@@ -19,7 +19,7 @@ class SimpleHarness:
         self.cfg = LazyConfig.apply_overrides(self.cfg, self.args.opts)
         default_setup(self.cfg, self.args)
 
-    def do_test(self, model):
+    def _do_test(self, model):
         if "evaluator" in self.cfg.dataloader:
             ret = inference_on_dataset(
                 model, instantiate(self.cfg.dataloader.test), instantiate(self.cfg.dataloader.evaluator)
@@ -27,7 +27,7 @@ class SimpleHarness:
             print_csv_format(ret)
             return ret
 
-    def do_train(self):
+    def _do_train(self):
         """
         Args:
             cfg: an object with the following attributes:
@@ -70,7 +70,7 @@ class SimpleHarness:
                 hooks.PeriodicCheckpointer(checkpointer, **self.cfg.train.checkpointer)
                 if comm.is_main_process()
                 else None,
-                hooks.EvalHook(self.cfg.train.eval_period, lambda: self.do_test(model)),
+                hooks.EvalHook(self.cfg.train.eval_period, lambda: self._do_test(model)),
                 hooks.PeriodicWriter(
                     default_writers(self.cfg.train.output_dir, self.cfg.train.max_iter),
                     period=self.cfg.train.log_period,
@@ -95,6 +95,6 @@ class SimpleHarness:
             model.to(self.cfg.train.device)
             model = create_ddp_model(model)
             DetectionCheckpointer(model).load(self.cfg.train.init_checkpoint)
-            print(self.do_test(model))
+            print(self._do_test(model))
         else:
-            self.do_train()
+            self._do_train()
