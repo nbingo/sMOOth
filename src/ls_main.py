@@ -25,7 +25,9 @@ def main():
     cfg = LazyConfig.load(args.config_file)
     cfg = LazyConfig.apply_overrides(cfg, args.opts)
     print(cfg.train.gpus)
-    gpu_q = Queue(cfg.train.gpus)
+    gpu_q = Queue()
+    for gpu in cfg.train.gpus:
+        gpu_q.put(gpu)
     print(f'Number of gpus in Queue: {len(gpu_q)}')
     num_ref_dirs = get_reference_directions('das-dennis', len(cfg.model.loss_fn),
                                             n_partitions=cfg.train.num_preference_vector_partitions).shape[0]
