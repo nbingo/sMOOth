@@ -15,8 +15,7 @@ def start_ls(preference_vector_idx: int, gpu: int):
     command = f'CUDA_VISIBLE_DEVICES={gpu} python src/main.py --config-file /src/configs/adult/adult_mlp_ls.py ' \
               f'MODEL.PREFERENCE_VECTOR_IDX={preference_vector_idx} ' \
               f'TRAIN.OUTPUT_DIR=./output/ls/adult/{preference_vector_idx}'
-    command = command.split(' ')
-    subprocess.run(command)
+    subprocess.run(command, shell=True, check=True)
     return gpu
 
 def main():
