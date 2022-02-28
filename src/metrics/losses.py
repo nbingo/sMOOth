@@ -22,6 +22,9 @@ class MultiObjectiveLoss:
             loss_dict[loss.__name__] = loss(inputs, outputs)
         return loss_dict
 
+    def __len__(self):
+        return len(self.losses)
+
 
 def _binary_equalized_odds_viol(cond_prob_counters: torch.Tensor):
     # Compute prob of positive result for each possibility of group and true label

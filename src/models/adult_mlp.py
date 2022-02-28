@@ -1,6 +1,7 @@
 # adapted from https://github.com/BigRedT/deep_income/blob/master/model.py
 
 import torch.nn as nn
+from detectron2.config import LazyConfig, instantiate
 from src.models.base import BaseModel
 
 
@@ -21,7 +22,7 @@ class IncomeClassifier(BaseModel):
         self.num_hidden_blocks = num_hidden_blocks
         self.drop_prob = drop_prob
         self.out_dim = out_dim
-        self.loss_fn = loss_fn
+        self.loss_fn = instantiate(loss_fn) if isinstance(loss_fn, LazyConfig) else loss_fn
         self.device = device
 
         if self.num_hidden_blocks == 0:

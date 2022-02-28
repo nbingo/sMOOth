@@ -14,7 +14,7 @@ from concurrent.futures import ProcessPoolExecutor, FIRST_COMPLETED, wait, ALL_C
 from itertools import cycle
 from copy import deepcopy
 import multiprocessing
-
+from pymoo.factory import get_reference_directions
 
 
 class SimpleHarness:
@@ -104,6 +104,74 @@ class SimpleHarness:
             self._do_train()
 
 
+class LinearScalarizationHarness(SimpleHarness):
+    def _do_train(self):
+        """
+        Args:
+            cfg: an object with the following attributes:
+                model: instantiate to a module
+                dataloader.{train,test}: instantiate to dataloaders
+                dataloader.evaluator: instantiate to evaluator for test set
+                optimizer: instantaite to an optimizer
+                lr_multiplier: instantiate to a fvcore scheduler
+                train: other misc config defined in `configs/common/train.py`, including:
+                    output_dir (str)
+                    init_checkpoint (str)
+                    amp.enabled (bool)
+                    max_iter (int)
+                    eval_period, log_period (int)
+                    device (str)
+                    checkpointer (dict)
+                    ddp (dict)
+        """
+        self.model = instantiate(self.cfg.model)
+        logger = logging.getLogger("detectron2")
+        logger.info("Model:\n{}".format(self.model))
+        self.model.to(self.cfg.train.device)
+
+        self.cfg.optimizer.params.model = self.model
+        optim = instantiate(self.cfg.optimizer)
+
+        train_loader = instantiate(self.cfg.dataloader.train)
+
+        model = create_ddp_model(self.model, **self.cfg.train.ddp)
+        # Assuming that we have MultiObjectiveLoss here
+        preference_ray = get_reference_directions('das-dennis', len(self.cfg.model.loss_fn),
+                                                  self.cfg.train.num_preference_vector_partitions)
+        # And assuming we have linear scalarization trainer here
+        trainer = self.cfg.train.trainer(model, train_loader, optim, preference_ray)
+        checkpointer = DetectionCheckpointer(
+            model,
+            self.cfg.train.output_dir,
+            trainer=trainer,
+        )
+        trainer.register_hooks(
+            [
+                hooks.IterationTimer(),
+                hooks.LRScheduler(scheduler=instantiate(self.cfg.lr_multiplier)),
+                hooks.PeriodicCheckpointer(checkpointer, **self.cfg.train.checkpointer)
+                if comm.is_main_process()
+                else None,
+                hooks.EvalHook(self.cfg.train.eval_period, lambda: self._do_test()),
+                hooks.PeriodicWriter(
+                    default_writers(self.cfg.train.output_dir, self.cfg.train.max_iter),
+                    period=self.cfg.train.log_period,
+                )
+                if comm.is_main_process()
+                else None,
+            ]
+        )
+
+        checkpointer.resume_or_load(self.cfg.train.init_checkpoint, resume=self.args.resume)
+        if self.args.resume and checkpointer.has_checkpoint():
+            # The checkpoint stores the training iteration that just finished, thus we start
+            # at the next iteration
+            start_iter = trainer.iter + 1
+        else:
+            start_iter = 0
+        trainer.train(start_iter, self.cfg.train.max_iter)
+
+
 class MultiProcessHarness(SimpleHarness):
     """
     its config file must have the extra parameter train.process_over_key key with value indicating the key in the config
@@ -114,6 +182,7 @@ class MultiProcessHarness(SimpleHarness):
     Lastly, it must have train.gpus and train.num_models_per_gpu, a list of GPUs to use that will be iterated over to
     train the models with at most train.num_models_per_gpu models on each gpu
     """
+
     # TODO: GIVE UP ON MULTIPROCESSING HARNESS B/C DAEMONIC PROCESEES CAN'T HAVE CHILDREN. JUST MAKE ANOTHER SCRIPT
     #  SPECIFICALLY FOR LINEAR SCALARIZATION AND DEAL WITH IT
     def __init__(self, args, cfg):
@@ -123,7 +192,7 @@ class MultiProcessHarness(SimpleHarness):
         cycle_gpus = cycle(self.cfg.train.gpus)
         for val in self.cfg.train.process_over_vals:
             new_cfg = deepcopy(self.cfg)
-            new_cfg[self.cfg.train.process_over_key] = val        # TODO: This probably isn't the right syntax here...
+            new_cfg[self.cfg.train.process_over_key] = val  # TODO: This probably isn't the right syntax here...
             new_cfg.train.device = f'cuda:{next(cycle_gpus)}'
             self.modified_cfgs.append(new_cfg)
 
