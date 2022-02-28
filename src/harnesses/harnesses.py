@@ -1,5 +1,6 @@
 import logging
 
+import torch
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.config import instantiate
 from detectron2.engine import (
@@ -138,7 +139,7 @@ class LinearScalarizationHarness(SimpleHarness):
         # Assuming that we have MultiObjectiveLoss here
         preference_ray = get_reference_directions('das-dennis', len(self.cfg.model.loss_fn),
                                                   n_partitions=self.cfg.train.num_preference_vector_partitions)
-        preference_ray = preference_ray[self.cfg.train.preference_ray_idx]
+        preference_ray = torch.from_numpy(preference_ray[self.cfg.train.preference_ray_idx])
         # And assuming we have linear scalarization trainer here
         trainer = self.cfg.train.trainer(model, train_loader, optim, preference_ray)
         checkpointer = DetectionCheckpointer(
