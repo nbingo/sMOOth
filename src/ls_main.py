@@ -2,7 +2,6 @@ from concurrent.futures import ProcessPoolExecutor, FIRST_COMPLETED, wait, ALL_C
 from detectron2.config import LazyConfig
 from detectron2.engine import (
     default_argument_parser,
-    default_setup,
 )
 from queue import Queue
 from pymoo.factory import get_reference_directions
@@ -13,10 +12,11 @@ import subprocess
 def start_ls(preference_vector_idx: int, gpu: int):
     # TODO: Change output dir
     command = f'CUDA_VISIBLE_DEVICES={gpu} python src/main.py --config-file src/configs/adult/adult_mlp_ls.py ' \
-              f'MODEL.PREFERENCE_VECTOR_IDX={preference_vector_idx} ' \
-              f'TRAIN.OUTPUT_DIR=./output/ls/adult/{preference_vector_idx}'
+              f'model.preference_vector_idx={preference_vector_idx} ' \
+              f'train.output_dir=./output/ls/adult/{preference_vector_idx}'
     subprocess.run(command, shell=True, check=True)
     return gpu
+
 
 def main():
     # Need to change output dir and device and preference vector index
@@ -35,7 +35,7 @@ def main():
             as executor:
         for idx in range(num_ref_dirs):
             # Check if there's an available gpu to use
-            if gpu_q.empty():       # If empty, then wait until a job finishes
+            if gpu_q.empty():  # If empty, then wait until a job finishes
                 print('No GPUs available, waiting for a process to finish...')
                 done, not_done = wait(futures, return_when=FIRST_COMPLETED)
                 print(f'{len(done)} processes finished. Adding their GPUs to the available queue.')
