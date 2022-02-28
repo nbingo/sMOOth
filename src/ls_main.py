@@ -34,12 +34,16 @@ def main():
         for idx in range(num_ref_dirs):
             # Check if there's an available gpu to use
             if gpu_q.empty():       # If empty, then wait until a job finishes
+                print('No GPUs available, waiting for a process to finish...')
                 done, not_done = wait(futures, return_when=FIRST_COMPLETED)
+                print(f'{len(done)} processes finished. Adding their GPUs to the available queue.')
                 futures -= done
                 for future in futures:
                     gpu_q.put(future.result())
             # now that we have gpus to use, start a new task
-            futures.add(executor.submit(start_ls, idx, gpu_q.get()))
+            gpu = gpu_q.get()
+            print(f'Going to submit new job on gpu {gpu} with preference vector index {idx}')
+            futures.add(executor.submit(start_ls, idx, gpu))
         wait(futures, return_when=ALL_COMPLETED)
 
 
