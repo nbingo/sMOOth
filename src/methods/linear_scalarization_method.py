@@ -27,7 +27,6 @@ class LinearScalarizationTrainer(SimpleTrainer):
         """
         loss_dict = self.model(data)
         losses = torch.matmul(torch.stack(list(loss_dict.values())), self.preference_vector)
-        loss_dict = self.model(data)
         loss_dict['total_loss'] = losses
 
         """
