@@ -1,1 +1,1 @@
-from harnesses import SimpleHarness, MultiProcessHarness, LinearScalarizationHarness
+from .harnesses import SimpleHarness, MultiProcessHarness, LinearScalarizationHarness
