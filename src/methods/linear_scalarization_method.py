@@ -8,6 +8,7 @@ class LinearScalarizationTrainer(SimpleTrainer):
         super().__init__(model, data_loader, optimizer)
 
         self.preference_vector = preference_vector
+        print(f'Running linear scalarization method with preference vector: {self.preference_vector}')
 
     def run_step(self):
         """
