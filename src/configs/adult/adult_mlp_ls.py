@@ -15,3 +15,4 @@ model.loss_fn = L(MultiObjectiveLoss)(losses=[cross_entropy_loss, equalized_odds
 # Options for linear scalarization. Mainly for get_reference_directions from PYMOO
 train.num_preference_vector_partitions = 4
 train.preference_vector_idx = 2     # Which indexed preference vector to use
+train.gpus = [0]
