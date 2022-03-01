@@ -57,6 +57,7 @@ train.output_dir = './output/fmow/standard'
 model = L(EfficientNetB4)(
     pretrained=True,
     loss_fn=cross_entropy_loss,
+    device=train.device,
 )
 
 optimizer = L(torch.optim.Adam)(

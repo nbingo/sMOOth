@@ -1,14 +1,16 @@
 import torchvision.models as models
 from src.models.base import BaseModel
 
+
 class EfficientNetB4(BaseModel):
-    def __init__(self, loss_fn, pretrained: bool = False):
+    def __init__(self, loss_fn, pretrained: bool = False, device: str = 'cuda'):
         super().__init__()
         self.model = models.efficientnet_b4(pretrained=pretrained)
         self.loss_fn = loss_fn
+        self.device = device
 
     def forward(self, data):
-        feats = data['feat']
+        feats = data['feat'].to(device=self.device)
 
         logits = self.model(feats)
         if self.training:
