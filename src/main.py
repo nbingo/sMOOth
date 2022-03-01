@@ -21,8 +21,6 @@ from detectron2.engine import (
 )
 from detectron2.config import LazyConfig
 
-from src.harnesses.harnesses import SimpleHarness
-
 if __name__ == "__main__":
     torch.autograd.set_detect_anomaly(True)
     args = default_argument_parser().parse_args()
