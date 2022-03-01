@@ -30,7 +30,7 @@ dataloader.train = L(build_data_loader)(
     dataset=L(WildsFMoWDataset)(
         subset='train',
     ),
-    batch_size=128,
+    batch_size=100,
     num_workers=4,
     training=True,
 )
@@ -39,7 +39,7 @@ dataloader.test = L(build_data_loader)(
     dataset=L(WildsFMoWDataset)(
         subset='val',
     ),
-    batch_size=128,
+    batch_size=100,
     num_workers=4,
     training=False,
 )
