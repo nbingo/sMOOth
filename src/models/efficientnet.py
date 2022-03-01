@@ -1,5 +1,5 @@
 import torchvision.models as models
-from src.models import BaseModel
+from src.models.base import BaseModel
 
 class EfficientNetB4(BaseModel):
     def __init__(self, loss_fn, pretrained: bool = False):
