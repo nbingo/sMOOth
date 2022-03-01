@@ -80,9 +80,9 @@ class CrossEntropyLossOnGroup:
     def __init__(self, group: int):
         self.group = group
 
-    def __call__(self, inputs, logits):
-        labels = inputs['label']
-        groups = inputs['group']
+    def __call__(self, inputs: dict[str, torch.Tensor], logits: torch.Tensor):
+        labels = inputs['label'].to(device=logits.device)
+        groups = inputs['group'].to(device=logits.device)
 
         # Select only for group we're training on
         logits = logits[groups == self.group]
