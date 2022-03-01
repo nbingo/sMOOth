@@ -1,6 +1,6 @@
 import subprocess
 
-from .ls_main import main
+from src.ls_main import main
 
 
 def start_ls(preference_vector_idx: int, gpu: int):
