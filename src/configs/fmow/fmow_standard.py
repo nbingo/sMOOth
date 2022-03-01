@@ -23,7 +23,7 @@ from src.configs.common.utils import build_data_loader
 from src.loaders import WildsFMoWDataset
 from src.metrics.evaluators import ClassificationAcc, BinaryEqualizedOddsViolation
 from src.models import EfficientNetB4
-from src.metrics.losses import cross_entropy_loss
+from src.metrics.losses import cross_entropy_loss, CrossEntropyLossOnGroup
 
 dataloader = OmegaConf.create()
 dataloader.train = L(build_data_loader)(
@@ -56,7 +56,7 @@ train.output_dir = './output/fmow/standard'
 
 model = L(EfficientNetB4)(
     pretrained=True,
-    loss_fn=cross_entropy_loss,
+    loss_fn=CrossEntropyLossOnGroup(group=2),
     device=train.device,
 )
 

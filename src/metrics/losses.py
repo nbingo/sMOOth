@@ -74,3 +74,17 @@ def equalized_odds_violation(inputs: dict, outputs):
 def cross_entropy_loss(inputs: dict, logits):
     labels = inputs['label'].to(dtype=int, device='cpu')
     return F.cross_entropy(logits.to(device='cpu'), labels)
+
+
+class CrossEntropyLossOnGroup:
+    def __init__(self, group: int):
+        self.group = group
+
+    def __call__(self, inputs, logits):
+        labels = inputs['label']
+        groups = inputs['group']
+
+        # Select only for group we're training on
+        logits = logits[groups == self.group]
+        labels = labels[groups == self.group]
+        return F.cross_entropy(logits, labels)
