@@ -8,7 +8,7 @@ from .adult_mlp_standard import (
 )
 
 from src.metrics.losses import MultiObjectiveLoss, cross_entropy_loss, equalized_odds_violation
-from src.methods import LinearScalarizationTrainer
+from src.methods import CalibratedLinearScalarizationTrainer
 from src.harnesses import LinearScalarizationHarness
 
 from detectron2.config import LazyCall as L
@@ -19,6 +19,6 @@ model.loss_fn = L(MultiObjectiveLoss)(losses=[cross_entropy_loss, equalized_odds
 train.num_preference_vector_partitions = 10
 train.preference_ray_idx = 2     # Which indexed preference vector to use
 train.gpus = [0]
-train.trainer = LinearScalarizationTrainer
+train.trainer = CalibratedLinearScalarizationTrainer
 train.harness = LinearScalarizationHarness
-train.output_dir = './output/adult/ls'
+train.output_dir = './output/adult/calibrated_ls'

@@ -23,7 +23,6 @@ def main():
     args = default_argument_parser().parse_args()
     cfg = LazyConfig.load(args.config_file)
     cfg = LazyConfig.apply_overrides(cfg, args.opts)
-    print(cfg.train.gpus)
     gpu_q = Queue()
     for gpu in cfg.train.gpus:
         gpu_q.put(gpu)
