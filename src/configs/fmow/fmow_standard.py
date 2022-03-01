@@ -30,7 +30,7 @@ dataloader.train = L(build_data_loader)(
     dataset=L(WildsFMoWDataset)(
         subset='train',
     ),
-    batch_size=10,
+    batch_size=40,
     num_workers=4,
     training=True,
 )
@@ -39,7 +39,7 @@ dataloader.test = L(build_data_loader)(
     dataset=L(WildsFMoWDataset)(
         subset='val',
     ),
-    batch_size=10,
+    batch_size=40,
     num_workers=4,
     training=False,
 )
@@ -50,8 +50,8 @@ dataloader.evaluator = L(DatasetEvaluators)(evaluators=(ClassificationAcc(),))
 train = LazyConfig.load("/lfs/local/0/nomir/sMOOth/src/configs/common/train.py").train
 train.init_checkpoint = None
 # max_iter = number epochs * (train dataset size / batch size)
-train.max_iter = 10 * 76863 // 10
-train.eval_period = 76863 // 10
+train.max_iter = 40 * 76863 // 40
+train.eval_period = 76863 // 40
 train.output_dir = './output/fmow/standard'
 
 model = L(EfficientNetB4)(
