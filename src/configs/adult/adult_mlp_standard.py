@@ -55,6 +55,7 @@ train.init_checkpoint = None
 # max_iter = number epochs * (train dataset size / batch size)
 train.max_iter = 50 * 30162 // 256
 train.eval_period = 30162 // 256
+train.output_dir = './output/adult/standard'
 
 model = L(IncomeClassifier)(
     in_dim=105,
