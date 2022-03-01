@@ -11,7 +11,7 @@ class WildsFMoWDataset(Dataset):
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         self.dataset = self.full_dataset.get_subset(
             subset,
-            transform=transforms.Compose([transforms.Resize((448, 448)), transforms.ToTensor(), self.normalize]),
+            transform=transforms.Compose([transforms.Resize((224, 224)), transforms.ToTensor(), self.normalize]),
         )
         print(f'Using WILDS FMoW Dataset on {subset} split with {len(self.dataset)} examples')
         self.grouper = CombinatorialGrouper(self.full_dataset, ['region'])
