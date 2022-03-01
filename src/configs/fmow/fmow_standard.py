@@ -30,7 +30,7 @@ dataloader.train = L(build_data_loader)(
     dataset=L(WildsFMoWDataset)(
         subset='train',
     ),
-    batch_size=64,
+    batch_size=10,
     num_workers=4,
     training=True,
 )
@@ -39,13 +39,13 @@ dataloader.test = L(build_data_loader)(
     dataset=L(WildsFMoWDataset)(
         subset='val',
     ),
-    batch_size=64,
+    batch_size=10,
     num_workers=4,
     training=False,
 )
 
 # Can also be list of DatasetEvaluators
-dataloader.evaluator = L(DatasetEvaluators)(evaluators=(ClassificationAcc()))
+dataloader.evaluator = L(DatasetEvaluators)(evaluators=(ClassificationAcc(),))
 
 train = LazyConfig.load("/lfs/local/0/nomir/sMOOth/src/configs/common/train.py").train
 train.init_checkpoint = None
