@@ -11,7 +11,7 @@ class WildsFMoWDataset(Dataset):
         self.normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         self.dataset = self.full_dataset.get_subset(
             subset,
-            transform=transforms.Compose([transforms.Resize((448, 448)), self.normalize, transforms.ToTensor()]),
+            transform=transforms.Compose([transforms.Resize((448, 448)), transforms.ToTensor(), self.normalize]),
         )
         self.grouper = CombinatorialGrouper(self.full_dataset, ['region'])
 
