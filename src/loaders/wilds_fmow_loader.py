@@ -13,6 +13,7 @@ class WildsFMoWDataset(Dataset):
             subset,
             transform=transforms.Compose([transforms.Resize((448, 448)), transforms.ToTensor(), self.normalize]),
         )
+        print(f'Using WILDS FMoW Dataset on {subset} split with {len(self.dataset)} examples')
         self.grouper = CombinatorialGrouper(self.full_dataset, ['region'])
 
     def __len__(self):
