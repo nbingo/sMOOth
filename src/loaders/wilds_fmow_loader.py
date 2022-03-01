@@ -20,7 +20,10 @@ class WildsFMoWDataset(Dataset):
 
     def __getitem__(self, item):
         feat, label, metadata = self.dataset[item]
-        group = self.grouper.metadata_to_group(metadata)
+        # Need to pad dimension of metadata for grouper if only one item was requested
+        if len(metadata.size()) == 1:
+            metadata = metadata.unsqueeze(0)
+        group = self.grouper.metadata_to_group(metadata).squeeze()
         return {
             'label': label,
             'feat': feat,

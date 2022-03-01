@@ -45,7 +45,7 @@ dataloader.test = L(build_data_loader)(
 )
 
 # Can also be list of DatasetEvaluators
-dataloader.evaluator = L(DatasetEvaluators)(evaluators=(ClassificationAcc(), BinaryEqualizedOddsViolation()))
+dataloader.evaluator = L(DatasetEvaluators)(evaluators=(ClassificationAcc()))
 
 train = LazyConfig.load("/lfs/local/0/nomir/sMOOth/src/configs/common/train.py").train
 train.init_checkpoint = None
